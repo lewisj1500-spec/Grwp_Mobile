@@ -16,7 +16,26 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width:100%; height:100%; overflow:hidden; overscroll-behavior:none; }
 body { font-family: 'Inter', sans-serif; background: #EEF1F8; -webkit-tap-highlight-color: transparent; }
-.wrap { width:100vw; height:100vh; height:100dvh; display:block; position:relative; }
+
+/* ============================================================
+   GLOBAL UI ZOOM
+   The whole app is scaled up on phones so text, cards, nav and
+   buttons feel right on a real device. The layout box is shrunk
+   inversely so the zoomed visual still fills 100vw × 100dvh.
+   Desktop stays at 1× so the design isn't grossly oversized.
+   ============================================================ */
+:root { --app-zoom: 1; }
+@media (max-width: 900px) {
+  :root { --app-zoom: 1.22; }
+}
+.wrap {
+  width: calc(100vw / var(--app-zoom));
+  height: calc(100vh / var(--app-zoom));
+  height: calc(100dvh / var(--app-zoom));
+  zoom: var(--app-zoom);
+  display: block;
+  position: relative;
+}
 .lbl { display:none; }
 .sh { scrollbar-width: none; min-height: 0; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .sh::-webkit-scrollbar { display: none; }
