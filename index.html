@@ -1053,7 +1053,7 @@ if (typeof window !== 'undefined' && typeof window.__grwpDevMenuOpen === 'undefi
 }
 
 /* ── Sticky app header bar ── */
-const AppHeader = ({onNotif, onProfile, title, accountMode, onSwitchMode, cmTier, userPro, onSettings, onSignOut, onAsk}) => {
+const AppHeader = ({onNotif, onProfile, title, accountMode, onSwitchMode, cmTier, userPro, onSettings, onSignOut, onAsk, hidden=false}) => {
   const [open, setOpen] = React.useState(false);
   const choose = (m) => { setOpen(false); onSwitchMode && onSwitchMode(m); };
   const personalActive = accountMode !== 'community';
@@ -1070,9 +1070,10 @@ const AppHeader = ({onNotif, onProfile, title, accountMode, onSwitchMode, cmTier
       background:'#FAFBFF',
       borderBottom:`1px solid ${T.border}`,
       boxShadow:'0 2px 12px rgba(72,112,221,0.07)',
+      transition: 'padding .25s ease',
     }}>
-      {/* Grwp + right actions row — extra top padding preserves the ~96px header height that screens (SegNav top:96 etc) depend on. */}
-      <div style={{display:'flex',alignItems:'center',gap:8,padding:'50px 18px 8px',position:'relative'}}>
+      {/* Title + actions row — collapses on scroll-down to a thin title-only bar */}
+      <div style={{display:'flex',alignItems:'center',gap:8,padding:hidden?'4px 18px 4px':'14px 18px 8px',position:'relative',transition:'padding .25s ease, gap .25s ease'}}>
         {(() => {
           const isFeedTitle = !title; // only the feed/home screen leaves title undefined → renders "Grwp"
           const onTitleTap = isFeedTitle
@@ -1080,34 +1081,43 @@ const AppHeader = ({onNotif, onProfile, title, accountMode, onSwitchMode, cmTier
             : undefined;
           return (
             <span onClick={onTitleTap}
-              style={{fontSize:24,fontWeight:900,color:T.ink,letterSpacing:'-0.6px',cursor:isFeedTitle?'pointer':'default',userSelect:'none'}}>
+              style={{fontSize:hidden?15:24,fontWeight:hidden?700:900,color:T.ink,letterSpacing:hidden?'-0.2px':'-0.6px',cursor:isFeedTitle?'pointer':'default',userSelect:'none',transition:'font-size .25s ease, font-weight .25s ease'}}>
               {title||'Grwp'}
             </span>
           );
         })()}
         <div style={{flex:1}}/>
-        {onAsk && (
-          <button onClick={onAsk} aria-label="Ask Grwp AI"
-            style={{width:34,height:34,borderRadius:17,background:T.white,border:`1px solid ${T.border}`,
-              display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontFamily:'inherit',
-              boxShadow:'0 1px 4px rgba(28,20,16,0.06)',padding:0}}>
-            <span style={{display:'flex',alignItems:'center',justifyContent:'center',width:24,height:24,overflow:'hidden'}}>
-              <GrwpSparkle size={36}/>
-            </span>
+        <div style={{display:'flex',alignItems:'center',gap:8,
+          opacity:hidden?0:1,
+          transform:hidden?'scale(0.6)':'scale(1)',
+          transformOrigin:'right center',
+          pointerEvents:hidden?'none':'auto',
+          transition:'opacity .2s ease, transform .25s ease',
+          maxWidth:hidden?0:'none',
+          overflow:hidden?'hidden':'visible'}}>
+          {onAsk && (
+            <button onClick={onAsk} aria-label="Ask Grwp AI"
+              style={{width:34,height:34,borderRadius:17,background:T.white,border:`1px solid ${T.border}`,
+                display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontFamily:'inherit',
+                boxShadow:'0 1px 4px rgba(28,20,16,0.06)',padding:0,flexShrink:0}}>
+              <span style={{display:'flex',alignItems:'center',justifyContent:'center',width:24,height:24,overflow:'hidden'}}>
+                <GrwpSparkle size={36}/>
+              </span>
+            </button>
+          )}
+          <button onClick={onNotif} style={{width:34,height:34,borderRadius:17,background:T.white,border:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 1px 4px rgba(28,20,16,0.06)',position:'relative',flexShrink:0}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke={T.body} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <div style={{position:'absolute',top:5,right:5,width:7,height:7,borderRadius:4,background:T.red,border:'1.5px solid white'}}/>
           </button>
-        )}
-        <button onClick={onNotif} style={{width:34,height:34,borderRadius:17,background:T.white,border:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 1px 4px rgba(28,20,16,0.06)',position:'relative'}}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke={T.body} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          <div style={{position:'absolute',top:5,right:5,width:7,height:7,borderRadius:4,background:T.red,border:'1.5px solid white'}}/>
-        </button>
-        <button onClick={()=>setOpen(o=>!o)} style={{width:34,height:34,borderRadius:17,background:communityActive?T.teal:T.blue,border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 2px 8px rgba(72,112,221,0.3)',overflow:'hidden',padding:0,position:'relative'}}>
-          {communityActive && cmImg
-            ? <img src={cmImg} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} onError={e=>{e.target.style.display='none';}}/>
-            : <>
-                <img src="assets/user-avatar.jpg" onError={e=>{e.target.onerror=null;e.target.style.cssText="display:none";e.target.nextSibling.style.cssText="display:flex;align-items:center;justify-content:center";}} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
-                <span style={{fontSize:12,fontWeight:800,color:'white',display:'none',width:'100%',height:'100%',alignItems:'center',justifyContent:'center'}}>JD</span>
-              </>}
-        </button>
+          <button onClick={()=>setOpen(o=>!o)} style={{width:34,height:34,borderRadius:17,background:communityActive?T.teal:T.blue,border:'none',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 2px 8px rgba(72,112,221,0.3)',overflow:'hidden',padding:0,position:'relative',flexShrink:0}}>
+            {communityActive && cmImg
+              ? <img src={cmImg} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}} onError={e=>{e.target.style.display='none';}}/>
+              : <>
+                  <img src="assets/user-avatar.jpg" onError={e=>{e.target.onerror=null;e.target.style.cssText="display:none";e.target.nextSibling.style.cssText="display:flex;align-items:center;justify-content:center";}} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                  <span style={{fontSize:12,fontWeight:800,color:'white',display:'none',width:'100%',height:'100%',alignItems:'center',justifyContent:'center'}}>JD</span>
+                </>}
+          </button>
+        </div>
       </div>
       {/* Account dropdown */}
       {open&&(
@@ -1194,9 +1204,10 @@ const SwipeTrack = ({active, tabs, children, style={}, onChange}) => {
   const [w, setW] = React.useState(0);
 
   // Mobile: ignore tiny finger jitter, only commit a tab change on a clear horizontal swipe.
-  const DEADZONE = 14;          // ignored before any visual translation
-  const COMMIT_RATIO = 0.28;    // fraction of page width to trigger tab change
-  const COMMIT_VELOCITY = 0.45; // px/ms; quick flicks also commit
+  const DEADZONE = 28;            // px ignored before any visual translation
+  const AXIS_LOCK_RATIO = 1.6;    // dx must exceed dy by this factor to lock to x
+  const COMMIT_RATIO = 0.42;      // fraction of page width to trigger tab change
+  const COMMIT_VELOCITY = 0.65;   // px/ms; quick flicks also commit
 
   React.useEffect(() => {
     if(!containerRef.current) return;
@@ -1223,7 +1234,12 @@ const SwipeTrack = ({active, tabs, children, style={}, onChange}) => {
     // Lock the gesture to one axis once the user has clearly moved.
     if(lockedAxis.current===null){
       if(Math.abs(dx) < DEADZONE && Math.abs(dy) < DEADZONE) return;
-      lockedAxis.current = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      // Only lock to x if movement is *clearly* horizontal — small jitter stays vertical.
+      if(Math.abs(dx) > Math.abs(dy) * AXIS_LOCK_RATIO && Math.abs(dx) >= DEADZONE){
+        lockedAxis.current = 'x';
+      } else {
+        lockedAxis.current = 'y';
+      }
     }
     if(lockedAxis.current!=='x') return; // vertical scroll — ignore
     // Subtract deadzone so the page doesn't snap when we cross the threshold.
@@ -1341,37 +1357,37 @@ const Nav = ({active, go, accountMode='personal'}) => {
   const INACTIVE_FG = '#9A9A95';
   const ic = a => a ? ACTIVE_FG : INACTIVE_FG;
   const personalTabs = [
-    { id:'home', label:'Home', svg: a=><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3L21 9.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5Z" fill={a?ic(a):'none'} stroke={ic(a)} strokeWidth="1.8"/></svg> },
-    { id:'discover', label:'Discover', svg: a=><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke={ic(a)} strokeWidth="1.8"/><path d="M17 17l4 4" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round"/></svg> },
-    { id:'groups', label:'Social', svg: a=><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.5" stroke={ic(a)} strokeWidth="1.8"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round"/><circle cx="17.5" cy="8" r="2.5" stroke={ic(a)} strokeWidth="1.5"/><path d="M15.5 14.5C16.3 14.2 17 14 18 14c2.2 0 4 1.8 4 4" stroke={ic(a)} strokeWidth="1.5" strokeLinecap="round"/></svg> },
-    { id:'chat', label:'Chat', svg: a=><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="13" rx="4" stroke={ic(a)} strokeWidth="1.8"/><path d="M8 21l4-4H3" stroke={ic(a)} strokeWidth="1.8" strokeLinejoin="round"/></svg> },
-    { id:'memories', label:'Memories', svg: a=><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="3" stroke={ic(a)} strokeWidth="1.8"/><circle cx="8.5" cy="10.5" r="1.5" fill={ic(a)}/><path d="M3 16l5-5 4 4 3-3 6 6" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
+    { id:'home', label:'Home', svg: a=><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3L21 9.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5Z" fill={a?ic(a):'none'} stroke={ic(a)} strokeWidth="1.8"/></svg> },
+    { id:'discover', label:'Discover', svg: a=><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke={ic(a)} strokeWidth="1.8"/><path d="M17 17l4 4" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round"/></svg> },
+    { id:'groups', label:'Social', svg: a=><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.5" stroke={ic(a)} strokeWidth="1.8"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round"/><circle cx="17.5" cy="8" r="2.5" stroke={ic(a)} strokeWidth="1.5"/><path d="M15.5 14.5C16.3 14.2 17 14 18 14c2.2 0 4 1.8 4 4" stroke={ic(a)} strokeWidth="1.5" strokeLinecap="round"/></svg> },
+    { id:'chat', label:'Chat', svg: a=><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="13" rx="4" stroke={ic(a)} strokeWidth="1.8"/><path d="M8 21l4-4H3" stroke={ic(a)} strokeWidth="1.8" strokeLinejoin="round"/></svg> },
+    { id:'memories', label:'Memories', svg: a=><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="3" stroke={ic(a)} strokeWidth="1.8"/><circle cx="8.5" cy="10.5" r="1.5" fill={ic(a)}/><path d="M3 16l5-5 4 4 3-3 6 6" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   ];
   const communityTabs = [
-    { id:'cmDashboard', label:'Home', svg: a=><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3L21 9.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5Z" fill={a?ic(a):'none'} stroke={ic(a)} strokeWidth="1.8"/></svg> },
-    { id:'cmMeets', label:'Meets', svg: a=><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke={ic(a)} strokeWidth="1.8"/><path d="M3 9h18M8 3v4M16 3v4" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round"/></svg> },
-    { id:'cmMembers', label:'Members', svg: a=><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.5" stroke={ic(a)} strokeWidth="1.8"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round"/><circle cx="17.5" cy="8" r="2.5" stroke={ic(a)} strokeWidth="1.5"/><path d="M15.5 14.5C16.3 14.2 17 14 18 14c2.2 0 4 1.8 4 4" stroke={ic(a)} strokeWidth="1.5" strokeLinecap="round"/></svg> },
-    { id:'cmPosts', label:'Posts', svg: a=><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 11v2a3 3 0 0 0 3 3h1l5 4V4l-5 4H6a3 3 0 0 0-3 3z" stroke={ic(a)} strokeWidth="1.8" strokeLinejoin="round"/><path d="M16 8c1.5 1 1.5 7 0 8" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round"/></svg> },
-    { id:'cmInsights', label:'Insights', svg: a=><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 21h18" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round"/><rect x="5" y="13" width="3.5" height="6" rx="1" stroke={ic(a)} strokeWidth="1.8"/><rect x="10.25" y="9" width="3.5" height="10" rx="1" stroke={ic(a)} strokeWidth="1.8"/><rect x="15.5" y="5" width="3.5" height="14" rx="1" stroke={ic(a)} strokeWidth="1.8"/></svg> },
+    { id:'cmDashboard', label:'Home', svg: a=><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3L21 9.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5Z" fill={a?ic(a):'none'} stroke={ic(a)} strokeWidth="1.8"/></svg> },
+    { id:'cmMeets', label:'Meets', svg: a=><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke={ic(a)} strokeWidth="1.8"/><path d="M3 9h18M8 3v4M16 3v4" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round"/></svg> },
+    { id:'cmMembers', label:'Members', svg: a=><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.5" stroke={ic(a)} strokeWidth="1.8"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round"/><circle cx="17.5" cy="8" r="2.5" stroke={ic(a)} strokeWidth="1.5"/><path d="M15.5 14.5C16.3 14.2 17 14 18 14c2.2 0 4 1.8 4 4" stroke={ic(a)} strokeWidth="1.5" strokeLinecap="round"/></svg> },
+    { id:'cmPosts', label:'Posts', svg: a=><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 11v2a3 3 0 0 0 3 3h1l5 4V4l-5 4H6a3 3 0 0 0-3 3z" stroke={ic(a)} strokeWidth="1.8" strokeLinejoin="round"/><path d="M16 8c1.5 1 1.5 7 0 8" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round"/></svg> },
+    { id:'cmInsights', label:'Insights', svg: a=><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 21h18" stroke={ic(a)} strokeWidth="1.8" strokeLinecap="round"/><rect x="5" y="13" width="3.5" height="6" rx="1" stroke={ic(a)} strokeWidth="1.8"/><rect x="10.25" y="9" width="3.5" height="10" rx="1" stroke={ic(a)} strokeWidth="1.8"/><rect x="15.5" y="5" width="3.5" height="14" rx="1" stroke={ic(a)} strokeWidth="1.8"/></svg> },
   ];
   const items = accountMode==='community' ? communityTabs : personalTabs;
   return (
     <div style={{
-      position:'absolute',bottom:'max(16px, calc(env(safe-area-inset-bottom) + 8px))',left:20,right:20,zIndex:100,
+      position:'absolute',bottom:'max(12px, calc(env(safe-area-inset-bottom) + 6px))',left:20,right:20,zIndex:100,
       background:'rgba(250,250,248,0.72)',
       backdropFilter:'blur(16px) saturate(180%)',
       WebkitBackdropFilter:'blur(16px) saturate(180%)',
-      borderRadius:40,
+      borderRadius:30,
       boxShadow:'0 8px 28px rgba(72,112,221,0.13),0 1px 0 rgba(255,255,255,1) inset',
       border:'1px solid rgba(255,255,255,0.85)',
-      padding:5,
+      padding:3,
       display:'flex',justifyContent:'space-around',alignItems:'center',
     }}>
       {items.map(({id,svg,label})=>{
         const isActive = active===id;
         return (
           <button key={id} onClick={()=>go(id)} aria-label={label} style={{
-            width:44,height:44,borderRadius:'50%',
+            width:30,height:30,borderRadius:'50%',
             background:isActive?ACTIVE_BG:'transparent',
             border:'none',cursor:'pointer',
             display:'flex',alignItems:'center',justifyContent:'center',
@@ -1954,11 +1970,13 @@ const Memories = ({go, onMem, onCommMem, onNotif, onProfile, accountMode, cmTier
     );
   };
 
+  const memScrollRef = React.useRef(null);
+  const memHidden = useScrollCollapse(memScrollRef);
   return (
     <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',background:T.bg}}>
       <DI/>
-      <AppHeader title="Memories" onNotif={onNotif||function(){}} onProfile={onProfile||function(){}} accountMode={accountMode} cmTier={cmTier} onSwitchMode={onSwitchMode} userPro={userPro} onSignOut={onSignOut} onAsk={onAsk}/>
-      <div className="sh" style={{flex:1,overflowY:'auto',padding:'0 14px 8px',paddingTop:100}}>
+      <AppHeader title="Memories" onNotif={onNotif||function(){}} onProfile={onProfile||function(){}} accountMode={accountMode} cmTier={cmTier} onSwitchMode={onSwitchMode} userPro={userPro} onSignOut={onSignOut} onAsk={onAsk} hidden={memHidden}/>
+      <div ref={memScrollRef} className="sh" style={{flex:1,overflowY:'auto',padding:'0 14px 8px',paddingTop:memHidden?32:60,transition:'padding-top .25s ease'}}>
         <div style={{fontSize:12,color:T.meta,marginBottom:12,marginTop:4}}>Your group moments, in order</div>
 
         {years.map(yr=>(
@@ -3324,14 +3342,18 @@ const HomeScreen =({go, onNotif, onProfile, onEvent, onMeet, onMem, onCommMem, o
   const upcomingCollapsed=useScrollCollapse(upcomingScrollRef);
   const eventsCollapsed=useScrollCollapse(eventsScrollRef);
   const fabCollapsed=tab==='feed'?feedCollapsed:tab==='upcoming'?upcomingCollapsed:eventsCollapsed;
+  const headerHidden=fabCollapsed;
   return (
     <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',background:T.bg}}>
       <DI/>
       <AppHeader onNotif={onNotif} onProfile={onProfile}
         accountMode={accountMode} cmTier={cmTier} onSwitchMode={onSwitchMode}
         userPro={userPro} onSignOut={onSignOut} onAsk={onAsk}
+        hidden={headerHidden}
       />
-      <div style={{position:'absolute',top:106,left:14,right:14,zIndex:20}}>
+      <div style={{position:'absolute',top:64,left:14,right:14,zIndex:20,
+        transform: headerHidden ? 'translateY(-110px)' : 'translateY(0)',
+        transition: 'transform .25s ease'}}>
         <SegNav
           tabs={[
             {id:'feed',     label:'Feed',     r:15,g:23,b:42},
@@ -3351,7 +3373,7 @@ const HomeScreen =({go, onNotif, onProfile, onEvent, onMeet, onMem, onCommMem, o
         <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(238,241,248,0.5) 0%,rgba(238,241,248,0) 60%)'}}/>
       </div>
 
-      <SwipeTrack active={tab} tabs={['feed','upcoming','events']} style={{top:152}} onChange={setTab}>
+      <SwipeTrack active={tab} tabs={['feed','upcoming','events']} style={{top:headerHidden?32:108,transition:'top .25s ease'}} onChange={setTab}>
         <SwipePage scrollRef={feedScrollRef} style={{padding:'8px 14px 100px',paddingTop:8,background:'linear-gradient(180deg,#ECF0FA 0%,#EEF2FC 100%)'}}>
         {true&&(
           <div style={{display:'flex',flexDirection:'column',gap:14}}>
@@ -3863,13 +3885,16 @@ const Discover = ({go, onNotif, onProfile, onRecap, onPropose, openCommunityDeta
   const card = !done ? SWIPE_CARDS[cur] : null;
   const isCommunity = card && card._isCommunity;
 
+  const discHeaderHidden = discTab==='saved' ? fabCollapsed : false;
   return (
     <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',background:T.bg}}>
       <DI/>
-      <AppHeader title="Discover" onNotif={onNotif} onProfile={onProfile} accountMode={accountMode} cmTier={cmTier} onSwitchMode={onSwitchMode} userPro={userPro} onSignOut={onSignOut} onAsk={onAsk}/>
+      <AppHeader title="Discover" onNotif={onNotif} onProfile={onProfile} accountMode={accountMode} cmTier={cmTier} onSwitchMode={onSwitchMode} userPro={userPro} onSignOut={onSignOut} onAsk={onAsk} hidden={discHeaderHidden}/>
 
       {/* ── Tab strip ── */}
-      <div style={{position:'absolute',top:96,left:14,right:14,zIndex:20}}>
+      <div style={{position:'absolute',top:64,left:14,right:14,zIndex:20,
+        transform: discHeaderHidden ? 'translateY(-110px)' : 'translateY(0)',
+        transition: 'transform .25s ease'}}>
         <SegNav
           tabs={[
             {id:'foryou', label:'For You'},
@@ -3881,7 +3906,7 @@ const Discover = ({go, onNotif, onProfile, onRecap, onPropose, openCommunityDeta
       </div>
 
       {/* ══ DISCOVER TABS ══ */}
-      <div style={{position:'absolute',top:142,left:0,right:0,bottom:0,overflow:'hidden'}}>
+      <div style={{position:'absolute',top:discHeaderHidden?32:108,left:0,right:0,bottom:0,overflow:'hidden',transition:'top .25s ease'}}>
         <div style={{
           display:'flex',width:'200%',height:'100%',
           transform:discTab==='foryou'?'translateX(0)':'translateX(-50%)',
@@ -4745,12 +4770,19 @@ const Groups = ({go, openDetail, onNotif, onProfile, goCommunity, openCommunityD
   const [code,setCode]=React.useState(['','','','','','']);
   const refs=[React.useRef(),React.useRef(),React.useRef(),React.useRef(),React.useRef(),React.useRef()];
   const handleCode=(v,i)=>{ const n=[...code];n[i]=v.toUpperCase().slice(-1);setCode(n);if(v&&i<5)refs[i+1].current?.focus(); };
+  const groupsScrollRef=React.useRef(null);
+  const commsScrollRef=React.useRef(null);
+  const groupsCollapsed=useScrollCollapse(groupsScrollRef);
+  const commsCollapsed=useScrollCollapse(commsScrollRef);
+  const grpHeaderHidden = grpTab==='Groups'?groupsCollapsed:commsCollapsed;
   return (
     <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',background:T.bg}}>
       <DI/>
-      <AppHeader title="Social" onNotif={onNotif} onProfile={onProfile} accountMode={accountMode} cmTier={cmTier} onSwitchMode={onSwitchMode} userPro={userPro} onSignOut={onSignOut} onAsk={onAsk}/>
+      <AppHeader title="Social" onNotif={onNotif} onProfile={onProfile} accountMode={accountMode} cmTier={cmTier} onSwitchMode={onSwitchMode} userPro={userPro} onSignOut={onSignOut} onAsk={onAsk} hidden={grpHeaderHidden}/>
       {/* ── Tab strip — Groups / Communities ── */}
-      <div style={{position:'absolute',top:96,left:14,right:14,zIndex:20}}>
+      <div style={{position:'absolute',top:64,left:14,right:14,zIndex:20,
+        transform: grpHeaderHidden ? 'translateY(-110px)' : 'translateY(0)',
+        transition: 'transform .25s ease'}}>
         <SegNav
           tabs={[
             {id:'Groups',      label:'Groups'},
@@ -4762,10 +4794,10 @@ const Groups = ({go, openDetail, onNotif, onProfile, goCommunity, openCommunityD
       </div>
 
 
-      <SwipeTrack active={grpTab} tabs={['Groups','Communities']} style={{top:142}} onChange={setGrpTab}>
+      <SwipeTrack active={grpTab} tabs={['Groups','Communities']} style={{top:grpHeaderHidden?32:108,transition:'top .25s ease'}} onChange={setGrpTab}>
 
         {/* ══ GROUPS TAB ══ */}
-        <SwipePage style={{padding:'0 15px 100px',paddingTop:8}}>
+        <SwipePage scrollRef={groupsScrollRef} style={{padding:'0 15px 100px',paddingTop:8}}>
         {true&&<>
           <FcDivider label="Your groups"/>
           <div style={{height:6}}/>
@@ -4910,7 +4942,7 @@ const Groups = ({go, openDetail, onNotif, onProfile, goCommunity, openCommunityD
         </>}
 
         </SwipePage>
-        <SwipePage style={{padding:'0 15px 100px',paddingTop:8}}>
+        <SwipePage scrollRef={commsScrollRef} style={{padding:'0 15px 100px',paddingTop:8}}>
         {true&&<>
           {commDiscover&&(
             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
@@ -8055,18 +8087,24 @@ const Messaging = ({go, openChat, openCommunityDetail, onProfile, accountMode, c
     post: c.posts[0], // most recent post only
   }));
 
+  const msgScrollRef = React.useRef(null);
+  const msgHidden = useScrollCollapse(msgScrollRef);
   return (
     <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',background:T.bg}}>
       <DI/>
-      <AppHeader title="Messages" onNotif={()=>{}} onProfile={onProfile} accountMode={accountMode} cmTier={cmTier} onSwitchMode={onSwitchMode} userPro={userPro} onSignOut={onSignOut} onAsk={onAsk}/>
-      <div style={{position:'absolute',top:106,left:14,right:14,zIndex:20}}>
+      <AppHeader title="Messages" onNotif={()=>{}} onProfile={onProfile} accountMode={accountMode} cmTier={cmTier} onSwitchMode={onSwitchMode} userPro={userPro} onSignOut={onSignOut} onAsk={onAsk} hidden={msgHidden}/>
+      <div style={{position:'absolute',top:64,left:14,right:14,zIndex:20,
+        opacity: msgHidden ? 0 : 1,
+        transform: msgHidden ? 'translateY(-110px)' : 'translateY(0)',
+        transition: 'transform .25s ease, opacity .2s ease',
+        pointerEvents: msgHidden ? 'none' : 'auto'}}>
         <div style={{background:T.white,borderRadius:50,border:`1px solid ${T.border}`,display:'flex',alignItems:'center',gap:8,padding:'9px 14px',boxShadow:'0 1px 4px rgba(28,20,16,0.06)'}}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke={T.meta} strokeWidth="1.4"/><path d="M10 10l3 3" stroke={T.meta} strokeWidth="1.4" strokeLinecap="round"/></svg>
           <span style={{fontSize:12,color:T.meta}}>Search messages…</span>
         </div>
       </div>
 
-      <div className="sh" style={{flex:1,overflowY:'auto',padding:'12px 15px 8px',paddingTop:162}}>
+      <div ref={msgScrollRef} className="sh" style={{flex:1,overflowY:'auto',padding:'12px 15px 8px',paddingTop:msgHidden?40:120,transition:'padding-top .25s ease'}}>
 
         {/* ── Group chats ── */}
         <FcDivider label="Group chats"/>
