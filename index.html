@@ -662,34 +662,45 @@ const useScrollCollapse = (scrollRef) => {
   const lastY = React.useRef(0);
   const accumDown = React.useRef(0);
   const accumUp = React.useRef(0);
+  const lockUntil = React.useRef(0);
 
   React.useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+
+    const applyState = (val) => {
+      setCollapsed(prev => {
+        if (prev === val) return prev;
+        lockUntil.current = (performance.now ? performance.now() : Date.now()) + 350;
+        accumDown.current = 0;
+        accumUp.current = 0;
+        return val;
+      });
+    };
 
     const onScroll = () => {
       const y = el.scrollTop;
       const delta = y - lastY.current;
       lastY.current = y;
 
-      // At the top? Always expanded
-      if (y < 20) {
+      const now = performance.now ? performance.now() : Date.now();
+      if (now < lockUntil.current) return;
+
+      if (y < 6) {
         accumDown.current = 0;
         accumUp.current = 0;
-        setCollapsed(false);
+        applyState(false);
         return;
       }
 
       if (delta > 0) {
-        // Scrolling down
         accumDown.current += delta;
         accumUp.current = 0;
-        if (accumDown.current > 8) setCollapsed(true);
+        if (accumDown.current > 24) applyState(true);
       } else if (delta < 0) {
-        // Scrolling up
         accumUp.current += -delta;
         accumDown.current = 0;
-        if (accumUp.current > 8) setCollapsed(false);
+        if (accumUp.current > 24) applyState(false);
       }
     };
 
@@ -1976,7 +1987,7 @@ const Memories = ({go, onMem, onCommMem, onNotif, onProfile, accountMode, cmTier
     <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',background:T.bg}}>
       <DI/>
       <AppHeader title="Memories" onNotif={onNotif||function(){}} onProfile={onProfile||function(){}} accountMode={accountMode} cmTier={cmTier} onSwitchMode={onSwitchMode} userPro={userPro} onSignOut={onSignOut} onAsk={onAsk} hidden={memHidden}/>
-      <div ref={memScrollRef} className="sh" style={{flex:1,overflowY:'auto',padding:'0 14px 8px',paddingTop:memHidden?32:60,transition:'padding-top .25s ease'}}>
+      <div ref={memScrollRef} className="sh" style={{flex:1,overflowY:'auto',padding:'0 14px 8px',paddingTop:60}}>
         <div style={{fontSize:12,color:T.meta,marginBottom:12,marginTop:4}}>Your group moments, in order</div>
 
         {years.map(yr=>(
@@ -3373,8 +3384,8 @@ const HomeScreen =({go, onNotif, onProfile, onEvent, onMeet, onMem, onCommMem, o
         <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(238,241,248,0.5) 0%,rgba(238,241,248,0) 60%)'}}/>
       </div>
 
-      <SwipeTrack active={tab} tabs={['feed','upcoming','events']} style={{top:headerHidden?32:108,transition:'top .25s ease'}} onChange={setTab}>
-        <SwipePage scrollRef={feedScrollRef} style={{padding:'8px 14px 100px',paddingTop:8,background:'linear-gradient(180deg,#ECF0FA 0%,#EEF2FC 100%)'}}>
+      <SwipeTrack active={tab} tabs={['feed','upcoming','events']} onChange={setTab}>
+        <SwipePage scrollRef={feedScrollRef} style={{padding:'8px 14px 100px',paddingTop:116,background:'linear-gradient(180deg,#ECF0FA 0%,#EEF2FC 100%)'}}>
         {true&&(
           <div style={{display:'flex',flexDirection:'column',gap:14}}>
             {/* Pinned upcoming strip */}
@@ -3503,7 +3514,7 @@ const HomeScreen =({go, onNotif, onProfile, onEvent, onMeet, onMem, onCommMem, o
           </div>
         )}
         </SwipePage>
-        <SwipePage scrollRef={upcomingScrollRef} style={{padding:'8px 14px 100px',paddingTop:8,background:'linear-gradient(180deg,#ECF0FA 0%,#EEF2FC 100%)'}}>
+        <SwipePage scrollRef={upcomingScrollRef} style={{padding:'8px 14px 100px',paddingTop:116,background:'linear-gradient(180deg,#ECF0FA 0%,#EEF2FC 100%)'}}>
         {true&&(()=>{
           // ── Build all events ──
           const commUpcoming=COMMUNITIES
@@ -3694,7 +3705,7 @@ const HomeScreen =({go, onNotif, onProfile, onEvent, onMeet, onMem, onCommMem, o
           );
         })()}
         </SwipePage>
-        <SwipePage scrollRef={eventsScrollRef} style={{padding:'8px 14px 100px',paddingTop:8,background:'linear-gradient(180deg,#ECF0FA 0%,#EEF2FC 100%)'}}>
+        <SwipePage scrollRef={eventsScrollRef} style={{padding:'8px 14px 100px',paddingTop:116,background:'linear-gradient(180deg,#ECF0FA 0%,#EEF2FC 100%)'}}>
         {true&&(
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -3906,7 +3917,7 @@ const Discover = ({go, onNotif, onProfile, onRecap, onPropose, openCommunityDeta
       </div>
 
       {/* ══ DISCOVER TABS ══ */}
-      <div style={{position:'absolute',top:discHeaderHidden?32:108,left:0,right:0,bottom:0,overflow:'hidden',transition:'top .25s ease'}}>
+      <div style={{position:'absolute',top:0,left:0,right:0,bottom:0,overflow:'hidden'}}>
         <div style={{
           display:'flex',width:'200%',height:'100%',
           transform:discTab==='foryou'?'translateX(0)':'translateX(-50%)',
@@ -3917,7 +3928,7 @@ const Discover = ({go, onNotif, onProfile, onRecap, onPropose, openCommunityDeta
           {/* FOR YOU content */}
           {discTab==='foryou'&&<>
             {!done&&(
-            <div style={{padding:'0 14px',flexShrink:0,position:'absolute',top:0,left:0,right:0,zIndex:5}}>
+            <div style={{padding:'0 14px',flexShrink:0,position:'absolute',top:108,left:0,right:0,zIndex:5}}>
               <div style={{background:'#FAFAF8',borderRadius:14,border:'1px solid #E8E6E1',padding:'12px 14px'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
                   <button onClick={()=>cur>0&&setCur(c=>c-1)} style={{background:'#FAFAF8',border:'1px solid #E8E6E1',borderRadius:100,padding:'5px 12px',fontSize:11,fontWeight:600,color:cur>0?'#374151':'#9A9A95',cursor:cur>0?'pointer':'default',fontFamily:'inherit'}}>Undo</button>
@@ -3934,7 +3945,7 @@ const Discover = ({go, onNotif, onProfile, onRecap, onPropose, openCommunityDeta
               </div>
             </div>
             )}
-            <div style={{position:'absolute',top:done?0:78,left:0,right:0,bottom:100,padding:'0 14px',overflow:'hidden'}}>
+            <div style={{position:'absolute',top:done?108:186,left:0,right:0,bottom:100,padding:'0 14px',overflow:'hidden'}}>
               {done ? (
                 <div style={{background:'#FAFAF8',borderRadius:14,border:'1px solid #E8E6E1',padding:'20px 16px',display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center'}}>
                   {/* Green frosted tick */}
@@ -4099,7 +4110,7 @@ const Discover = ({go, onNotif, onProfile, onRecap, onPropose, openCommunityDeta
           </>}
           </div>
           {/* SAVED */}
-          <div ref={savedScrollRef} style={{width:'50%',height:'100%',overflowY:'auto',padding:'12px 15px 100px'}}>
+          <div ref={savedScrollRef} style={{width:'50%',height:'100%',overflowY:'auto',padding:'120px 15px 100px'}}>
                 {true&&<div style={{}}>
                   {saved.length===0 ? (
                     <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',textAlign:'center',padding:'60px 32px',gap:12}}>
@@ -4794,10 +4805,10 @@ const Groups = ({go, openDetail, onNotif, onProfile, goCommunity, openCommunityD
       </div>
 
 
-      <SwipeTrack active={grpTab} tabs={['Groups','Communities']} style={{top:grpHeaderHidden?32:108,transition:'top .25s ease'}} onChange={setGrpTab}>
+      <SwipeTrack active={grpTab} tabs={['Groups','Communities']} onChange={setGrpTab}>
 
         {/* ══ GROUPS TAB ══ */}
-        <SwipePage scrollRef={groupsScrollRef} style={{padding:'0 15px 100px',paddingTop:8}}>
+        <SwipePage scrollRef={groupsScrollRef} style={{padding:'0 15px 100px',paddingTop:116}}>
         {true&&<>
           <FcDivider label="Your groups"/>
           <div style={{height:6}}/>
@@ -4942,7 +4953,7 @@ const Groups = ({go, openDetail, onNotif, onProfile, goCommunity, openCommunityD
         </>}
 
         </SwipePage>
-        <SwipePage scrollRef={commsScrollRef} style={{padding:'0 15px 100px',paddingTop:8}}>
+        <SwipePage scrollRef={commsScrollRef} style={{padding:'0 15px 100px',paddingTop:116}}>
         {true&&<>
           {commDiscover&&(
             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
@@ -10529,6 +10540,7 @@ const EventDetail = ({event, back}) => {
     <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',background:T.bg}}>
       <DI/>
       <SB light/>
+      <div className="sh" style={{flex:1,overflowY:'auto'}}>
       <div style={{height:220,position:'relative',flexShrink:0,overflow:'hidden'}}>
         {event.img?<img src={event.img} style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>:null}
         <div style={{position:'absolute',inset:0,background:event.img?`linear-gradient(to top,rgba(15,23,42,0.85) 0%,rgba(15,23,42,0.2) 100%)`:`linear-gradient(135deg,${event.accent||event.bc} 0%,${event.bc}cc 100%)`}}/>
@@ -10539,7 +10551,7 @@ const EventDetail = ({event, back}) => {
           <div style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginTop:4}}>{event.area} · {event.dist}</div>
         </div>
       </div>
-      <div className="sh" style={{flex:1,overflowY:'auto',padding:'14px 16px'}}>
+      <div style={{padding:'14px 16px'}}>
         <div style={{display:'flex',gap:8,marginBottom:14}}>{[{v:event.date,l:'Date'},{v:event.time,l:'Time'},{v:event.price,l:'Price'}].map((s,i)=><div key={i} style={{flex:1,background:T.white,borderRadius:14,padding:'10px 8px',textAlign:'center',boxShadow:'0 1px 6px rgba(15,23,42,0.05)'}}><div style={{fontSize:11,fontWeight:800,color:T.ink}}>{s.v}</div><div style={{fontSize:9,color:T.meta,marginTop:2}}>{s.l}</div></div>)}</div>
         <div style={{background:T.white,borderRadius:16,padding:'12px 14px',marginBottom:12,boxShadow:'0 1px 8px rgba(15,23,42,0.06)'}}>
           <div style={{fontSize:12,fontWeight:700,color:T.ink,marginBottom:6}}>About this event</div>
@@ -10561,6 +10573,7 @@ const EventDetail = ({event, back}) => {
         </div>
         <button style={{width:'100%',background:T.alt,border:`1px solid ${T.border}`,borderRadius:50,padding:'11px',fontSize:12,fontWeight:700,color:T.meta,cursor:'pointer',marginBottom:8}}>Share with Group</button>
       </div>
+      </div>
     </div>
   );
 };
@@ -10578,6 +10591,7 @@ const MeetDetail = ({meet, back}) => {
     <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',background:T.bg}}>
       <DI/>
       <SB light/>
+      <div className="sh" style={{flex:1,overflowY:'auto'}}>
       {/* Hero — same proportions as EventDetail */}
       <div style={{height:220,position:'relative',flexShrink:0,overflow:'hidden'}}>
         {meet.img
@@ -10606,7 +10620,7 @@ const MeetDetail = ({meet, back}) => {
           </div>
         </div>
       </div>
-      <div className="sh" style={{flex:1,overflowY:'auto',padding:'14px 16px 24px'}}>
+      <div style={{padding:'14px 16px 24px'}}>
         {/* Stat row */}
         <div style={{display:'flex',gap:8,marginBottom:14}}>
           {[
@@ -10703,6 +10717,7 @@ const MeetDetail = ({meet, back}) => {
           Share with Group
         </button>
       </div>
+      </div>
     </div>
   );
 };
@@ -10719,6 +10734,7 @@ const MemoryDetail = ({memId, back}) => {
   return (
     <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',background:T.bg}}>
 
+      <div className="sh" style={{flex:1,overflowY:'auto',background:T.bg}}>
       {/* ── HERO ── */}
       <div style={{position:'relative',height:280,flexShrink:0}}>
         {allImgs[0]
@@ -10764,7 +10780,7 @@ const MemoryDetail = ({memId, back}) => {
       </div>
 
       {/* ── PHOTO GRID ── */}
-      <div className="sh" style={{flex:1,overflowY:'auto',padding:'10px 12px 16px',background:T.bg}}>
+      <div style={{padding:'10px 12px 16px',background:T.bg}}>
         <div style={{fontSize:9,fontWeight:700,color:T.meta,letterSpacing:'.1em',marginBottom:8}}>{allImgs.length} PHOTOS</div>
 
         {/* Slot 0 — full-width cover */}
@@ -10805,6 +10821,7 @@ const MemoryDetail = ({memId, back}) => {
           <div style={{fontSize:11,fontWeight:700,color:'#64748B',marginBottom:2}}>Add your photos</div>
           <div style={{fontSize:9,color:T.meta}}>From this night — tap to upload</div>
         </div>
+      </div>
       </div>
 
       {/* ── STICKY BOTTOM BAR ── */}
